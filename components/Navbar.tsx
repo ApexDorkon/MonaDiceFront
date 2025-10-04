@@ -5,7 +5,7 @@ import { connectWallet } from "../lib/wallet";
 import { apiCreateUser } from "../lib/api";
 import toast from "react-hot-toast";
 
-export default function Navbar(): JSX.Element {
+export default function Navbar() {
   const [addr, setAddr] = useState<string | null>(null);
 
   async function onConnect(): Promise<void> {

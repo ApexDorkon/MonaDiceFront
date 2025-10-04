@@ -4,7 +4,7 @@ import { apiGetCampaigns } from "../lib/api";
 import CampaignCard from "../components/CampaignCard";
 import type { CampaignDTO } from "../types";
 
-export default function Home(): JSX.Element {
+export default function Home() {
   const [items, setItems] = useState<CampaignDTO[]>([]);
 
   useEffect(() => {

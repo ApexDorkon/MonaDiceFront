@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import type { CampaignDTO, UUID } from "../../types";
 import { ethers } from "ethers";
 
-export default function CampaignDetail(): JSX.Element {
+export default function CampaignDetail() {
   const router = useRouter();
   const id = router.query.id as UUID;
   const [c, setC] = useState<CampaignDTO | null>(null);

@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import { ethers } from "ethers";
 
-export default function CreatePage(): JSX.Element {
+export default function CreatePage() {
   const [title, setTitle] = useState("");
   const [symbol, setSymbol] = useState("");
   const [durationH, setDurationH] = useState(4);

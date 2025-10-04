@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { apiGetUsers } from "../lib/api";
 import type { UserDTO } from "../types";
 
-export default function ProfilePage(): JSX.Element {
+export default function ProfilePage() {
   const [users, setUsers] = useState<UserDTO[]>([]);
 
   useEffect(() => {
