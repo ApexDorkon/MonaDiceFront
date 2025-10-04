@@ -1,24 +1,30 @@
 // lib/wallet.ts
 import { ethers } from "ethers";
 
-export interface Eip1193Provider {
-  request: (args: { method: string; params?: unknown[] | object }) => Promise<any>;
-  on?: (event: string, listener: (...args: any[]) => void) => void;
-  removeListener?: (event: string, listener: (...args: any[]) => void) => void;
-}
-
-export async function connectWallet(): Promise<{
+export interface WalletConnection {
   address: string;
   provider: ethers.BrowserProvider;
   signer: ethers.Signer;
-}> {
-  if (typeof window === "undefined" || !(window as any).ethereum) {
-    throw new Error("MetaMask not found");
+}
+
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+      on?: (event: string, handler: (...args: unknown[]) => void) => void;
+      removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
+    };
   }
-  const ethereum = (window as any).ethereum as Eip1193Provider;
-  const [address] = (await ethereum.request({ method: "eth_requestAccounts" })) as string[];
-  const provider = new ethers.BrowserProvider(ethereum as unknown as any);
+}
+
+export async function connectWallet(): Promise<WalletConnection> {
+  if (typeof window === "undefined" || !window.ethereum) {
+    throw new Error("MetaMask not detected");
+  }
+
+  const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
+  const address = await signer.getAddress();
   return { address, provider, signer };
 }
 

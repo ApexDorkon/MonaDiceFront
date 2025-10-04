@@ -24,7 +24,7 @@ export default function CampaignDetail(): JSX.Element {
       .catch((err) => console.error(err));
   }, [id]);
 
-  const ended = useMemo<boolean>(() => {
+  const _ended = useMemo<boolean>(() => {
     if (!c) return false;
     return dayjs(c.end_time).isBefore(dayjs());
   }, [c]);
@@ -69,7 +69,7 @@ export default function CampaignDetail(): JSX.Element {
         toast("Joined, but ticketId not found in logs. You can check later in Profile.", { icon: "ℹ️" });
       }
 
-      const { address } = await connectWallet();
+      const { address: _address } = await connectWallet();
       const payload: CreateTicketPayload = {
         campaign_id: c.id,
         user_id: "00000000-0000-0000-0000-000000000000" as UUID,
