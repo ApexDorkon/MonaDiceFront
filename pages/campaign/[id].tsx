@@ -1,11 +1,10 @@
 // pages/campaign/[id].tsx
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiGetCampaign, apiCreateTicket, type CreateTicketPayload } from "../../lib/api";
 import { getCampaignWrite, USDC_DECIMALS, getWriteContracts } from "../../lib/contracts";
-import { connectWallet, toUnits } from "../../lib/wallet";
+import { toUnits } from "../../lib/wallet";
 import toast from "react-hot-toast";
-import dayjs from "dayjs";
 import type { CampaignDTO, UUID } from "../../types";
 import { ethers } from "ethers";
 
@@ -23,11 +22,6 @@ export default function CampaignDetail(): JSX.Element {
       .then((res) => setC(res.data))
       .catch((err) => console.error(err));
   }, [id]);
-
-  const _ended = useMemo<boolean>(() => {
-    if (!c) return false;
-    return dayjs(c.end_time).isBefore(dayjs());
-  }, [c]);
 
   async function approveUSDC(): Promise<void> {
     try {
@@ -69,7 +63,6 @@ export default function CampaignDetail(): JSX.Element {
         toast("Joined, but ticketId not found in logs. You can check later in Profile.", { icon: "ℹ️" });
       }
 
-      const { address: _address } = await connectWallet();
       const payload: CreateTicketPayload = {
         campaign_id: c.id,
         user_id: "00000000-0000-0000-0000-000000000000" as UUID,
@@ -110,8 +103,8 @@ export default function CampaignDetail(): JSX.Element {
         {c.title} <span className="text-gray-500 text-base">({c.symbol})</span>
       </h1>
       <div className="text-sm text-gray-600 mb-4">
-        Ends: {new Date(c.end_time).toLocaleString()} • Status: {c.status}{" "}
-        {c.status === "resolved" && `(Outcome: ${c.outcome ? "TRUE" : "FALSE"})`}
+        Ends: {new Date(c.end_time).toLocaleString()} • Status: {c.status}
+        {c.status === "resolved" && ` (Outcome: ${c.outcome ? "TRUE" : "FALSE"})`}
       </div>
 
       {c.status === "open" && (

@@ -1,8 +1,9 @@
 // components/CampaignCard.tsx
+import React from "react";
 import Link from "next/link";
 import type { CampaignDTO } from "../types";
 
-export default function CampaignCard({ c }: { c: CampaignDTO }): JSX.Element {
+export default function CampaignCard({ c }: { c: CampaignDTO }): React.JSX.Element {
   return (
     <Link href={`/campaign/${c.id}`}>
       <div className="border rounded p-4 hover:bg-gray-50 cursor-pointer">
