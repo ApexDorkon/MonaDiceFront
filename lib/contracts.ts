@@ -15,30 +15,34 @@ export const erc20Abi = [
   "function allowance(address owner, address spender) external view returns (uint256)",
   "function balanceOf(address owner) external view returns (uint256)",
   "function decimals() view returns (uint8)",
-];
+] as const;
 
-export function getReadProvider() {
+export function getReadProvider(): ethers.JsonRpcProvider {
   return new ethers.JsonRpcProvider(RPC_URL);
 }
 
-export async function getWriteContracts() {
+export async function getWriteContracts(): Promise<{
+  signer: ethers.Signer;
+  factory: ethers.Contract;
+  usdc: ethers.Contract;
+}> {
   const { signer } = await import("./wallet").then((mod) => mod.connectWallet());
-  const factory = new ethers.Contract(FACTORY_ADDR, factoryAbi as any, signer);
-  const usdc = new ethers.Contract(USDC_ADDR, erc20Abi, signer);
+  const factory = new ethers.Contract(FACTORY_ADDR, factoryAbi as unknown as ethers.InterfaceAbi, signer);
+  const usdc = new ethers.Contract(USDC_ADDR, erc20Abi as unknown as ethers.InterfaceAbi, signer);
   return { signer, factory, usdc };
 }
 
-export function getReadContracts() {
+export function getReadContracts(): { provider: ethers.JsonRpcProvider; factory: ethers.Contract } {
   const provider = getReadProvider();
-  const factory = new ethers.Contract(FACTORY_ADDR, factoryAbi as any, provider);
+  const factory = new ethers.Contract(FACTORY_ADDR, factoryAbi as unknown as ethers.InterfaceAbi, provider);
   return { provider, factory };
 }
 
-export function getCampaignWrite(address: string, signer: ethers.Signer) {
-  return new ethers.Contract(address, campaignAbi as any, signer);
+export function getCampaignWrite(address: string, signer: ethers.Signer): ethers.Contract {
+  return new ethers.Contract(address, campaignAbi as unknown as ethers.InterfaceAbi, signer);
 }
 
-export function getCampaignRead(address: string) {
+export function getCampaignRead(address: string): ethers.Contract {
   const provider = getReadProvider();
-  return new ethers.Contract(address, campaignAbi as any, provider);
+  return new ethers.Contract(address, campaignAbi as unknown as ethers.InterfaceAbi, provider);
 }

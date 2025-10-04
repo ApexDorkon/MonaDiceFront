@@ -1,17 +1,18 @@
 // pages/create.tsx
 import { useState } from "react";
-import { apiCreateCampaign } from "../lib/api";
+import { apiCreateCampaign, type CreateCampaignPayload } from "../lib/api";
 import { getWriteContracts } from "../lib/contracts";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
+import { ethers } from "ethers";
 
-export default function CreatePage() {
+export default function CreatePage(): JSX.Element {
   const [title, setTitle] = useState("");
   const [symbol, setSymbol] = useState("");
   const [durationH, setDurationH] = useState(4);
   const feeBps = Number(process.env.NEXT_PUBLIC_DEFAULT_FEE_BPS || "500");
 
-  async function handleCreate() {
+  async function handleCreate(): Promise<void> {
     try {
       const { signer, factory } = await getWriteContracts();
       const addr = await signer.getAddress();
@@ -23,16 +24,18 @@ export default function CreatePage() {
       let campaignAddress: string | undefined;
       for (const log of receipt.logs) {
         try {
-          const parsed = (factory as any).interface.parseLog(log);
+          const parsed = (factory.interface as ethers.Interface).parseLog(log);
           if (parsed.name === "CampaignDeployed") {
             campaignAddress = parsed.args.campaignAddress as string;
             break;
           }
-        } catch {}
+        } catch {
+          // ignore non-matching logs
+        }
       }
       if (!campaignAddress) throw new Error("CampaignDeployed event not found");
 
-      await apiCreateCampaign({
+      const payload: CreateCampaignPayload = {
         creator_wallet: addr,
         contract_address: campaignAddress,
         title,
@@ -40,13 +43,16 @@ export default function CreatePage() {
         end_time: new Date(endTime * 1000).toISOString(),
         fee_bps: feeBps,
         creation_stake: "0",
-      });
+      };
+
+      await apiCreateCampaign(payload);
 
       toast.success(`Created: ${campaignAddress}`);
       setTitle("");
       setSymbol("");
-    } catch (e: any) {
-      toast.error(e.message || "Create failed");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error(message || "Create failed");
     }
   }
 

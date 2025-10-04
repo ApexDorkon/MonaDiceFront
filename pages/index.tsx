@@ -2,12 +2,15 @@
 import { useEffect, useState } from "react";
 import { apiGetCampaigns } from "../lib/api";
 import CampaignCard from "../components/CampaignCard";
+import type { CampaignDTO } from "../types";
 
-export default function Home() {
-  const [items, setItems] = useState<any[]>([]);
+export default function Home(): JSX.Element {
+  const [items, setItems] = useState<CampaignDTO[]>([]);
 
   useEffect(() => {
-    apiGetCampaigns().then((res) => setItems(res.data)).catch(console.error);
+    apiGetCampaigns()
+      .then((res) => setItems(res.data))
+      .catch((err) => console.error(err));
   }, []);
 
   return (

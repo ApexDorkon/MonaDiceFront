@@ -1,29 +1,18 @@
 // pages/campaign/[id].tsx
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
-import { apiGetCampaign, apiCreateTicket } from "../../lib/api";
+import { apiGetCampaign, apiCreateTicket, type CreateTicketPayload } from "../../lib/api";
 import { getCampaignWrite, USDC_DECIMALS, getWriteContracts } from "../../lib/contracts";
 import { connectWallet, toUnits } from "../../lib/wallet";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
+import type { CampaignDTO, UUID } from "../../types";
+import { ethers } from "ethers";
 
-type TCampaign = {
-  id: string;
-  creator_wallet: string;
-  contract_address: string;
-  title: string;
-  symbol: string;
-  end_time: string;
-  fee_bps: number;
-  creation_stake: string;
-  status: "open" | "resolved" | "canceled";
-  outcome?: boolean;
-};
-
-export default function CampaignDetail() {
+export default function CampaignDetail(): JSX.Element {
   const router = useRouter();
-  const id = router.query.id as string;
-  const [c, setC] = useState<TCampaign | null>(null);
+  const id = router.query.id as UUID;
+  const [c, setC] = useState<CampaignDTO | null>(null);
   const [amount, setAmount] = useState<string>("");
   const [side, setSide] = useState<"true" | "false">("true");
   const [ticketIdForClaim, setTicketIdForClaim] = useState<string>("");
@@ -32,27 +21,28 @@ export default function CampaignDetail() {
     if (!id) return;
     apiGetCampaign(id)
       .then((res) => setC(res.data))
-      .catch(console.error);
+      .catch((err) => console.error(err));
   }, [id]);
 
-  const ended = useMemo(() => {
+  const ended = useMemo<boolean>(() => {
     if (!c) return false;
     return dayjs(c.end_time).isBefore(dayjs());
   }, [c]);
 
-  async function approveUSDC() {
+  async function approveUSDC(): Promise<void> {
     try {
-      const { usdc, signer } = await getWriteContracts();
+      const { usdc } = await getWriteContracts();
       const value = toUnits(amount, USDC_DECIMALS);
       const tx = await usdc.approve(c!.contract_address, value);
       await tx.wait();
       toast.success("USDC approved");
-    } catch (e: any) {
-      toast.error(e.message || "Approve failed");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error(message || "Approve failed");
     }
   }
 
-  async function join() {
+  async function join(): Promise<void> {
     try {
       if (!c) return;
       const { signer } = await getWriteContracts();
@@ -64,36 +54,40 @@ export default function CampaignDetail() {
       const rc = await tx.wait();
 
       let mintedTicketId: bigint | null = null;
-      for (const log of rc.logs) {
+      for (const log of rc.logs as ethers.Log[]) {
         try {
-          const parsed = (campaign as any).interface.parseLog(log);
+          const parsed = (campaign.interface as ethers.Interface).parseLog(log);
           if (parsed.name === "Joined") {
             mintedTicketId = parsed.args.ticketId as bigint;
             break;
           }
-        } catch {}
+        } catch {
+          // ignore non-matching logs
+        }
       }
       if (!mintedTicketId) {
         toast("Joined, but ticketId not found in logs. You can check later in Profile.", { icon: "ℹ️" });
       }
 
       const { address } = await connectWallet();
-      await apiCreateTicket({
+      const payload: CreateTicketPayload = {
         campaign_id: c.id,
-        user_id: "00000000-0000-0000-0000-000000000000",
+        user_id: "00000000-0000-0000-0000-000000000000" as UUID,
         nft_id: mintedTicketId ? Number(mintedTicketId) : 0,
         side: side === "true",
         stake: amount,
-      });
+      };
+      await apiCreateTicket(payload);
 
       toast.success("Joined successfully!");
       setAmount("");
-    } catch (e: any) {
-      toast.error(e.message || "Join failed");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error(message || "Join failed");
     }
   }
 
-  async function claim() {
+  async function claim(): Promise<void> {
     try {
       if (!c) return;
       const { signer } = await getWriteContracts();
@@ -102,8 +96,9 @@ export default function CampaignDetail() {
       await tx.wait();
       toast.success("Claimed!");
       setTicketIdForClaim("");
-    } catch (e: any) {
-      toast.error(e.message || "Claim failed");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error(message || "Claim failed");
     }
   }
 
@@ -126,7 +121,7 @@ export default function CampaignDetail() {
             <select
               className="border p-2 rounded"
               value={side}
-              onChange={(e) => setSide(e.target.value as any)}
+              onChange={(e) => setSide(e.target.value as "true" | "false")}
             >
               <option value="true">TRUE</option>
               <option value="false">FALSE</option>
@@ -152,9 +147,7 @@ export default function CampaignDetail() {
       {c.status === "resolved" && (
         <section className="border rounded p-4">
           <h2 className="font-semibold mb-2">Claim</h2>
-          <div className="text-sm text-gray-600 mb-2">
-            Enter your Ticket ID to claim payout.
-          </div>
+          <div className="text-sm text-gray-600 mb-2">Enter your Ticket ID to claim payout.</div>
           <div className="flex gap-2">
             <input
               className="border p-2 rounded flex-1"
@@ -167,8 +160,7 @@ export default function CampaignDetail() {
             </button>
           </div>
           <div className="text-xs text-gray-500 mt-2">
-            (Optional improvement: fetch your tickets from the backend with a
-            /tickets/by-user endpoint filtered by campaign_id and wallet.)
+            (Optional improvement: fetch your tickets from the backend with a /tickets/by-user endpoint filtered by campaign_id and wallet.)
           </div>
         </section>
       )}

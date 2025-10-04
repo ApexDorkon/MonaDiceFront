@@ -1,12 +1,13 @@
 // pages/profile.tsx
 import { useEffect, useState } from "react";
 import { apiGetUsers } from "../lib/api";
+import type { UserDTO } from "../types";
 
-export default function ProfilePage() {
-  const [users, setUsers] = useState<any[]>([]);
+export default function ProfilePage(): JSX.Element {
+  const [users, setUsers] = useState<UserDTO[]>([]);
 
   useEffect(() => {
-    apiGetUsers().then((res) => setUsers(res.data)).catch(console.error);
+    apiGetUsers().then((res) => setUsers(res.data)).catch((err) => console.error(err));
   }, []);
 
   return (

@@ -5,17 +5,18 @@ import { connectWallet } from "../lib/wallet";
 import { apiCreateUser } from "../lib/api";
 import toast from "react-hot-toast";
 
-export default function Navbar() {
+export default function Navbar(): JSX.Element {
   const [addr, setAddr] = useState<string | null>(null);
 
-  async function onConnect() {
+  async function onConnect(): Promise<void> {
     try {
       const { address } = await connectWallet();
       setAddr(address);
       await apiCreateUser(address);
       toast.success("Wallet connected & user registered");
-    } catch (e: any) {
-      toast.error(e.message || "Connect failed");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error(message || "Connect failed");
     }
   }
 
